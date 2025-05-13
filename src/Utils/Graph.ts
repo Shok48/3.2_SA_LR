@@ -38,6 +38,45 @@ export class Graph {
     private readonly _edges: ReadonlyArray<Edge>;
 
     /**
+     * Проверяет, что вершина корректна (является числом).
+     * @param vertex Вершина для проверки
+     * @throws {GraphArgumentError} Если вершина некорректна
+     */
+    private static validateVertex(vertex: Vertex): void {
+        if (typeof vertex !== 'number') {
+            throw new GraphArgumentError("Вершина должна быть числом");
+        }
+    }
+
+    /**
+     * Проверяет, что ребро корректно (является объектом с числовыми from и to).
+     * @param edge Ребро для проверки
+     * @throws {GraphArgumentError} Если ребро или его вершины некорректны
+     */
+    private static validateEdge(edge: Edge): void {
+        if (!edge || typeof edge !== 'object') {
+            throw new GraphArgumentError("Ребро должно быть объектом");
+        }
+        if (typeof edge.from !== 'number' || typeof edge.to !== 'number') {
+            throw new GraphArgumentError("Вершины ребра должны быть числами");
+        }
+    }
+
+    /**
+     * Проверяет, что вершины ребра существуют в графе.
+     * @param edge Ребро для проверки
+     * @throws {GraphValidationError} Если вершины ребра отсутствуют в графе
+     */
+    private validateEdgeVertices(edge: Edge): void {
+        if (!this._vertices.includes(edge.from)) {
+            throw new GraphValidationError(`Вершина ${edge.from} не найдена в графе`);
+        }
+        if (!this._vertices.includes(edge.to)) {
+            throw new GraphValidationError(`Вершина ${edge.to} не найдена в графе`);
+        }
+    }
+
+    /**
      * Создаёт новый экземпляр графа.
      * @param {Partial<IGraphData>} [params] Объект с вершинами и рёбрами графа
      * @throws {GraphArgumentError} Если вершины или рёбра заданы неверно
@@ -142,9 +181,7 @@ export class Graph {
      * @throws {GraphArgumentError} Если вершина некорректна
      */
     withVertex(vertex: Vertex): Graph {
-        if (typeof vertex !== 'number') {
-            throw new GraphArgumentError("Вершина должна быть числом");
-        }
+        Graph.validateVertex(vertex);
         if (this._vertices.includes(vertex)) {
             return this;
         }
@@ -161,9 +198,7 @@ export class Graph {
      * @throws {GraphArgumentError} Если вершина некорректна
      */
     withoutVertex(vertex: Vertex): Graph {
-        if (typeof vertex !== 'number') {
-            throw new GraphArgumentError("Вершина должна быть числом");
-        }
+        Graph.validateVertex(vertex);
         if (!this._vertices.includes(vertex)) {
             return this;
         }
@@ -183,18 +218,8 @@ export class Graph {
      * @throws {GraphValidationError} Если вершины ребра отсутствуют в графе
      */
     withEdge(edge: Edge): Graph {
-        if (!edge || typeof edge !== 'object') {
-            throw new GraphArgumentError("Ребро должно быть объектом");
-        }
-        if (typeof edge.from !== 'number' || typeof edge.to !== 'number') {
-            throw new GraphArgumentError("Вершины ребра должны быть числами");
-        }
-        if (!this._vertices.includes(edge.from)) {
-            throw new GraphValidationError(`Вершина ${edge.from} не найдена в графе`);
-        }
-        if (!this._vertices.includes(edge.to)) {
-            throw new GraphValidationError(`Вершина ${edge.to} не найдена в графе`);
-        }
+        Graph.validateEdge(edge);
+        this.validateEdgeVertices(edge);
         if (this._edges.some(e => e.from === edge.from && e.to === edge.to)) {
             return this;
         }
@@ -212,18 +237,8 @@ export class Graph {
      * @throws {GraphValidationError} Если вершины ребра отсутствуют в графе
      */
     withoutEdge(edge: Edge): Graph {
-        if (!edge || typeof edge !== 'object') {
-            throw new GraphArgumentError("Ребро должно быть объектом");
-        }
-        if (typeof edge.from !== 'number' || typeof edge.to !== 'number') {
-            throw new GraphArgumentError("Вершины ребра должны быть числами");
-        }
-        if (!this._vertices.includes(edge.from)) {
-            throw new GraphValidationError(`Вершина ${edge.from} не найдена в графе`);
-        }
-        if (!this._vertices.includes(edge.to)) {
-            throw new GraphValidationError(`Вершина ${edge.to} не найдена в графе`);
-        }
+        Graph.validateEdge(edge);
+        this.validateEdgeVertices(edge);
         if (!this._edges.some(e => e.from === edge.from && e.to === edge.to)) {
             return this;
         }
@@ -279,23 +294,19 @@ export class Graph {
 
     /**
      * Преобразует граф в список инцидентности.
-     * @param {Graph} graph Граф для преобразования
      * @param {"left"|"right"} [side="left"] Сторона (откуда-куда)
      * @returns {Record<Vertex, number[]>} Список инцидентности
      * @throws {GraphArgumentError} Если аргументы некорректны
      */
-    static toIncList(graph: Graph, side: "left" | "right" = "left"): Record<Vertex, number[]> {
-        if (!(graph instanceof Graph)) {
-            throw new GraphArgumentError("Аргумент должен быть экземпляром Graph");
-        }
+    toIncList(side: "left" | "right" = "left"): Record<Vertex, number[]> {
         if (side !== 'left' && side !== 'right') {
             throw new GraphArgumentError("Сторона должна быть 'left' или 'right'");
         }
-        const list = graph._vertices.reduce((acc, vertex) => {
+        const list = this._vertices.reduce((acc, vertex) => {
             acc[vertex] = [];
             return acc;
         }, {} as Record<Vertex, number[]>);
-        graph._edges.forEach(({ from, to }) => {
+        this._edges.forEach(({ from, to }) => {
             const [key, value] = side === 'left' ? [from, to] : [to, from];
             list[key].push(value);
         });
@@ -313,15 +324,25 @@ export class Graph {
         });
     }
 
+    
+    /**
+     * Преобразует граф в объект, соответствующий интерфейсу IGraphData.
+     * Возвращает новый объект с массивами вершин и рёбрами, пригодный для сериализации или передачи.
+     * @returns {IGraphData} Объект с вершинами и рёбрами графа
+     */
+    toObject(): IGraphData {
+        return {
+            vertices: [...this._vertices],
+            edges: [...this._edges]
+        };
+    }
+
     /**
      * Сериализует граф в строку JSON.
      * @returns {string} Строка JSON с вершинами и рёбрами графа
      */
     toJSON(): string {
-        return JSON.stringify({
-            vertices: this._vertices,
-            edges: this._edges
-        });
+        return JSON.stringify(this.toObject());
     }
 
     /**

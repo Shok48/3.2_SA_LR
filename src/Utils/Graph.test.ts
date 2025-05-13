@@ -100,7 +100,7 @@ describe("Graph", () => {
 
     it("преобразует в список инцидентности", () => {
         const graph = new Graph({ vertices, edges });
-        const incList = Graph.toIncList(graph);
+        const incList = graph.toIncList();
         expect(incList).toEqual({
             0: [1],
             1: [2],
