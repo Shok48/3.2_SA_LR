@@ -6,12 +6,12 @@ export type Edge = {
     weight?: number;
 }
 
-export interface GraphData {
+export interface IGraphData {
     vertices: Vertex[];
     edges: Edge[];
 }
 
-export interface GraphActions {
+export interface IGraphActions {
     addVertex: (vertex: Vertex) => void;
     addEdge: (edge: Edge) => void;
     removeVertex: (vertex: Vertex) => void;
