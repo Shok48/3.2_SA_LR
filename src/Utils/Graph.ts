@@ -253,7 +253,7 @@ export class Graph {
      * @returns {number[][]} Матрица смежности
      * @throws {GraphValidationError} Если граф пустой
      */
-    toAbjMatrix(): number[][] {
+    toAdjMatrix(): number[][] {
         if (this._vertices.length === 0) {
             throw new GraphValidationError("Невозможно создать матрицу для пустого графа");
         }
