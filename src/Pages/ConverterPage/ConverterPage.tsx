@@ -1,7 +1,7 @@
 import { Space, Table, Tabs, Tag, Tooltip, type TabsProps } from "antd"
 import BasePage from "../BasePage/BasePage"
 import { useEffect, useMemo, useState } from "react"
-import { Graph, GraphArgumentError, GraphValidationError } from "../../Utils/Graph"
+import { Graph, GraphValidationError } from "../../Utils/Graph"
 import IncListInput from "../../Components/IncListInput/IncListInput"
 
 interface IDataSource {
@@ -85,13 +85,13 @@ const ConverterPage: React.FC = () => {
         }))
     ], [graph])
 
-    const abjDataSource = useMemo(() => adjMatrix.map((row, rowIndex) => ({
+    const abjDataSource = useMemo(() => adjMatrix!.map((row, rowIndex) => ({
         key: `row-${rowIndex}`,
         vertex: `V${rowIndex + 1}`,
         ...Object.fromEntries(row.map((value, colIndex) => [`col${colIndex}`, value]))
     })), [adjMatrix])
 
-    const incDataSource = useMemo(() => incMatrix.map((row, rowIndex) => ({
+    const incDataSource = useMemo(() => incMatrix!.map((row, rowIndex) => ({
         key: `row-${rowIndex}`,
         vertex: `V${rowIndex + 1}`,
         ...Object.fromEntries(row.map((value, colIndex) => [`col${colIndex}`, value]))
