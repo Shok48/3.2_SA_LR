@@ -1,24 +1,12 @@
 export type Vertex = number;
 
 export type Edge = {
-    from: Vertex;
-    to: Vertex;
-    weight?: number;
+    readonly from: Vertex;
+    readonly to: Vertex;
+    readonly weight?: number;
 }
 
 export interface IGraphData {
     vertices: Vertex[];
     edges: Edge[];
 }
-
-export interface IGraphActions {
-    addVertex: (vertex: Vertex) => void;
-    addEdge: (edge: Edge) => void;
-    removeVertex: (vertex: Vertex) => void;
-    removeEdge: (edge: Edge) => void;
-    getVertices: () => Vertex[];
-    getEdges: () => Edge[];
-    getWeight: (edge: Edge) => number | undefined;
-    changeEdge: (oldEdge: Edge, newEdge: Edge) => void;
-}
-
