@@ -80,7 +80,7 @@ describe("Graph", () => {
 
     it("преобразует в матрицу смежности", () => {
         const graph = new Graph({ vertices, edges });
-        const matrix = graph.toAbjMatrix();
+        const matrix = graph.toAdjMatrix();
         expect(matrix).toEqual([
             [0, 1, 0],
             [0, 0, 1],
@@ -131,4 +131,28 @@ describe("Graph", () => {
     it("выбрасывает ошибку при десериализации некорректной структуры", () => {
         expect(() => Graph.fromJSON("{}")).toThrow(GraphArgumentError);
     });
+
+    it("выделение иерархических уровней графа", () => {
+        const vertices: Vertex[] = [0, 1, 2, 3, 4, 5, 6];
+        const edges: Edge[] =[
+            { from: 0, to: 1 },
+            { from: 0, to: 2 },
+            { from: 1, to: 3 },
+            { from: 2, to: 3 },
+            { from: 3, to: 4 },
+            { from: 4, to: 5 },
+            { from: 5, to: 6 },
+        ]
+        const graph = new Graph({ vertices, edges });
+        const HL = graph.getHierarchyLevels();
+        const expected = [
+            { level: [0] },
+            { level: [1, 2] },
+            { level: [3] },
+            { level: [4] },
+            { level: [5] },
+            { level: [6] }
+        ];
+        expect(HL).toEqual(expected);
+    })
 });

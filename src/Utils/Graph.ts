@@ -370,4 +370,38 @@ export class Graph {
             edges: data.edges
         });
     }
+
+    /**
+     * Возвращает иерархические уровни графа (Kahn's algorithm).
+     * @throws {GraphValidationError} Если граф пустой или содержит цикл
+     */
+    getHierarchyLevels(): { level: Vertex[] }[] {
+        if (this._vertices.length === 0) {
+            throw new GraphValidationError("Невозможно выделить иерархические уровни из пустого графа");
+        }
+        const inDegree = new Map<Vertex, number>(this._vertices.map(v => [v, 0]));
+        this._edges.forEach(edge => inDegree.set(edge.to, (inDegree.get(edge.to) || 0) + 1));
+        const queue: Vertex[] = this._vertices.filter(v => inDegree.get(v) === 0);
+        const hierarchyLevels: { level: Vertex[] }[] = [];
+        let processedCount = 0;
+        while (queue.length > 0) {
+            const currentLevel = [...queue];
+            hierarchyLevels.push({ level: currentLevel });
+            queue.length = 0;
+            for (const v of currentLevel) {
+                processedCount++;
+                for (const edge of this._edges) {
+                    if (edge.from === v) {
+                        const deg = inDegree.get(edge.to)! - 1;
+                        inDegree.set(edge.to, deg);
+                        if (deg === 0) queue.push(edge.to);
+                    }
+                }
+            }
+        }
+        if (processedCount !== this._vertices.length) {
+            throw new GraphValidationError("Граф содержит цикл");
+        }
+        return hierarchyLevels;
+    }
 }
