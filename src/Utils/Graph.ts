@@ -127,7 +127,7 @@ export class Graph {
      * @returns {Graph} Новый граф
      * @throws {GraphArgumentError} Если матрица некорректна
      */
-    static fromAbjMatrix(matrix: number[][]): Graph {
+    static fromAdjMatrix(matrix: number[][]): Graph {
         if (!Array.isArray(matrix)) {
             throw new GraphArgumentError("Матрица должна быть не-null массивом");
         }
