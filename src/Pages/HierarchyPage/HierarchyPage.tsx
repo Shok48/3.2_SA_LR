@@ -87,7 +87,7 @@ const HierarchyPage: React.FC = () => {
 
     const graphAdjMatrix = useMemo(
         () => graph.vertices.length !== 0 && graph.edges.length !== 0
-        ? graph.toAdjMatrix().map((row, rowIndex) => ({
+        ? graph.asAdjMatrix.map((row, rowIndex) => ({
             key: `row-${rowIndex}`,
             vertex: `V${rowIndex + 1}`,
             ...Object.fromEntries(row.map((value, colIndex) => [`col${colIndex}`, value]))
@@ -123,7 +123,7 @@ const HierarchyPage: React.FC = () => {
 
     const reassignGraphAdjMatrix = useMemo(
         () => reassignGraph!.vertices.length!== 0 && reassignGraph!.edges.length!== 0
-       ? reassignGraph!.toAdjMatrix().map((row, rowIndex) => ({
+       ? reassignGraph!.asAdjMatrix.map((row, rowIndex) => ({
             key: `row-${rowIndex}`,
             vertex: `V${rowIndex + 1}`,
            ...Object.fromEntries(row.map((value, colIndex) => [`col${colIndex}`, value]))
@@ -134,7 +134,7 @@ const HierarchyPage: React.FC = () => {
 
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
-            console.log("Значения графа: ", graph.toObject());
+            console.log("Значения графа: ", graph.asObject);
             if (graph.vertices.length !== 0 && graph.edges.length !== 0) console.log("HL: ", graph.HL);
             console.log("vertexMapping: ", vertexMapping);
         }
