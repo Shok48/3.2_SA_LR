@@ -35,13 +35,13 @@ const FieldManager: React.FC<IFieldManagerProps> = memo(
         >
             <Text>{vertex + 1}: &#123;</Text>
             {
-                neighbors.map((neighbor, i) => (
+                neighbors.map((neighbor, id) => (
                     <InputSelector
-                        key={`${vertex}-${i}`}
+                        key={`${vertex}-${id}`}
                         value={neighbor}
                         allVertices={allVertices}
                         onNeighborRemove={() => onNeighborRemove(vertex, neighbor)}
-                        onNeighborChange={(newNeighbor) => onNeighborChange(vertex, neighbor, newNeighbor)}
+                        onNeighborChange={(newNeighbor) => onNeighborChange(vertex, id, newNeighbor)}
                     />
                 ))
             }

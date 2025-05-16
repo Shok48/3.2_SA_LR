@@ -127,7 +127,7 @@ export class Graph {
      * @returns {Graph} Новый граф
      * @throws {GraphArgumentError} Если матрица некорректна
      */
-    static fromAbjMatrix(matrix: number[][]): Graph {
+    static fromAdjMatrix(matrix: number[][]): Graph {
         if (!Array.isArray(matrix)) {
             throw new GraphArgumentError("Матрица должна быть не-null массивом");
         }
@@ -369,5 +369,58 @@ export class Graph {
             vertices: data.vertices,
             edges: data.edges
         });
+    }
+
+    /**
+     * Возвращает иерархические уровни графа.
+     * Использует алгоритм Кана для топологической сортировки:
+     * - Считает входящие степени для всех вершин.
+     * - На каждом шаге выбирает вершины с нулевой входящей степенью (текущий уровень).
+     * - Удаляет их и уменьшает входящие степени у смежных вершин.
+     * Если после завершения остались вершины с ненулевой входящей степенью — граф содержит цикл.
+     * @throws {GraphValidationError} Если граф пустой или содержит цикл
+     */
+    get HL(): number[][] {
+        if (this._vertices.length === 0) {
+            throw new GraphValidationError("Невозможно выделить иерархические уровни из пустого графа");
+        }
+
+        // Считаем входящие степени для всех вершин
+        const inDegree = new Map<Vertex, number>();
+        this._vertices.forEach(v => inDegree.set(v, 0));
+        this._edges.forEach(({ to }) => {
+            inDegree.set(to, (inDegree.get(to) ?? 0) + 1);
+        });
+
+        const HL: number[][] = [];
+        const verticesLeft = new Set(this._vertices);
+
+        while (verticesLeft.size > 0) {
+            // Находим вершины с нулевой входящей степенью
+            const currentLevel: number[] = [];
+            for (const v of verticesLeft) {
+                if (inDegree.get(v) === 0) {
+                    currentLevel.push(v);
+                }
+            }
+
+            if (currentLevel.length === 0) {
+                throw new GraphValidationError("Граф содержит цикл, иерархические уровни не могут быть определены");
+            }
+
+            HL.push(currentLevel);
+
+            // Удаляем вершины текущего уровня и обновляем входящие степени
+            for (const v of currentLevel) {
+                verticesLeft.delete(v);
+                this._edges.forEach(({ from, to }) => {
+                    if (from === v && verticesLeft.has(to)) {
+                        inDegree.set(to, (inDegree.get(to) ?? 1) - 1);
+                    }
+                });
+            }
+        }
+
+        return HL;
     }
 }

@@ -54,7 +54,7 @@ const IncListInput: React.FC<IIncListInputProps> = ({ onGraphChange, side = 'lef
     }, [])
 
     const handleChangeNeighbor = useCallback((vertex: Vertex, neighvor: Vertex, newNeighbor: Vertex) => {
-        setIncList(prev => ({...prev, [vertex]: prev[vertex].map(v => v === neighvor ? newNeighbor : v)}))
+        setIncList(prev => ({...prev, [vertex]: prev[vertex].map((v, id) => id === neighvor ? newNeighbor : v)}))
     }, [])
 
     const handleClearIncList = useCallback(() => {

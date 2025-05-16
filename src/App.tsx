@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { BrowserRouter as Router, Link, Routes, Route } from 'react-router-dom';
 import styles from './App.module.css';
 import ConverterPage from './Pages/ConverterPage/ConverterPage';
+import HierarchyPage from './Pages/HierarchyPage/HierarchyPage';
 
 interface IRouteConfig {
     path: string,
@@ -21,6 +22,11 @@ const routes: IRouteConfig[] = [
         path: '/LR_1',
         label: 'Конвертер',
         component: <ConverterPage />
+    },
+    {
+        path: 'LR_2',
+        label: 'Целевая функция',
+        component: <HierarchyPage/>
     }
 ]
 
