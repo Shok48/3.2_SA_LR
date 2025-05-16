@@ -372,36 +372,55 @@ export class Graph {
     }
 
     /**
-     * Возвращает иерархические уровни графа (Kahn's algorithm).
+     * Возвращает иерархические уровни графа.
+     * Использует алгоритм Кана для топологической сортировки:
+     * - Считает входящие степени для всех вершин.
+     * - На каждом шаге выбирает вершины с нулевой входящей степенью (текущий уровень).
+     * - Удаляет их и уменьшает входящие степени у смежных вершин.
+     * Если после завершения остались вершины с ненулевой входящей степенью — граф содержит цикл.
      * @throws {GraphValidationError} Если граф пустой или содержит цикл
      */
-    getHierarchyLevels(): { level: Vertex[] }[] {
+    get HL(): number[][] {
         if (this._vertices.length === 0) {
             throw new GraphValidationError("Невозможно выделить иерархические уровни из пустого графа");
         }
-        const inDegree = new Map<Vertex, number>(this._vertices.map(v => [v, 0]));
-        this._edges.forEach(edge => inDegree.set(edge.to, (inDegree.get(edge.to) || 0) + 1));
-        const queue: Vertex[] = this._vertices.filter(v => inDegree.get(v) === 0);
-        const hierarchyLevels: { level: Vertex[] }[] = [];
-        let processedCount = 0;
-        while (queue.length > 0) {
-            const currentLevel = [...queue];
-            hierarchyLevels.push({ level: currentLevel });
-            queue.length = 0;
-            for (const v of currentLevel) {
-                processedCount++;
-                for (const edge of this._edges) {
-                    if (edge.from === v) {
-                        const deg = inDegree.get(edge.to)! - 1;
-                        inDegree.set(edge.to, deg);
-                        if (deg === 0) queue.push(edge.to);
-                    }
+
+        // Считаем входящие степени для всех вершин
+        const inDegree = new Map<Vertex, number>();
+        this._vertices.forEach(v => inDegree.set(v, 0));
+        this._edges.forEach(({ to }) => {
+            inDegree.set(to, (inDegree.get(to) ?? 0) + 1);
+        });
+
+        const HL: number[][] = [];
+        const verticesLeft = new Set(this._vertices);
+
+        while (verticesLeft.size > 0) {
+            // Находим вершины с нулевой входящей степенью
+            const currentLevel: number[] = [];
+            for (const v of verticesLeft) {
+                if (inDegree.get(v) === 0) {
+                    currentLevel.push(v);
                 }
             }
+
+            if (currentLevel.length === 0) {
+                throw new GraphValidationError("Граф содержит цикл, иерархические уровни не могут быть определены");
+            }
+
+            HL.push(currentLevel);
+
+            // Удаляем вершины текущего уровня и обновляем входящие степени
+            for (const v of currentLevel) {
+                verticesLeft.delete(v);
+                this._edges.forEach(({ from, to }) => {
+                    if (from === v && verticesLeft.has(to)) {
+                        inDegree.set(to, (inDegree.get(to) ?? 1) - 1);
+                    }
+                });
+            }
         }
-        if (processedCount !== this._vertices.length) {
-            throw new GraphValidationError("Граф содержит цикл");
-        }
-        return hierarchyLevels;
+
+        return HL;
     }
 }
