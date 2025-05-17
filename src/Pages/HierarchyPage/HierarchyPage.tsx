@@ -11,6 +11,15 @@ interface IDataSource {
     [key: string]: string;
 }
 
+function getKeyByValue(map: Map<Vertex, Vertex>, searchValue: Vertex): Vertex | undefined {
+    for (const [key, value] of map) {
+      if (value === searchValue) {
+        return key;
+      }
+    }
+    return undefined;
+}
+
 const HierarchyPage: React.FC = () => {
     const [graph, setGraph] = useState<Graph>(new Graph());
     
@@ -106,7 +115,7 @@ const HierarchyPage: React.FC = () => {
                 width: 60,
             },
            ...reassignGraph!.vertices.map((_, index) => ({
-                title: `V${index + 1} (V${vertexMapping!.get(index)! + 1})`,
+                title: `V${index + 1} (V${getKeyByValue(vertexMapping!, index)! + 1})`,
                 dataIndex: `col${index}`,
                 key: `col${index}`,
                 width: 60,

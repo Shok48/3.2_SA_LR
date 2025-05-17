@@ -80,7 +80,7 @@ describe("Graph", () => {
 
     it("преобразует в матрицу смежности", () => {
         const graph = new Graph({ vertices, edges });
-        const matrix = graph.toAdjMatrix();
+        const matrix = graph.asAdjMatrix;
         expect(matrix).toEqual([
             [0, 1, 0],
             [0, 0, 1],
@@ -90,7 +90,7 @@ describe("Graph", () => {
 
     it("преобразует в матрицу инцидентности", () => {
         const graph = new Graph({ vertices, edges });
-        const matrix = graph.toIncMatrix();
+        const matrix = graph.asIncMatrix;
         expect(matrix).toEqual([
             [-1, 0],
             [1, -1],
@@ -100,7 +100,7 @@ describe("Graph", () => {
 
     it("преобразует в список инцидентности", () => {
         const graph = new Graph({ vertices, edges });
-        const incList = graph.toIncList();
+        const incList = graph.asLeftIncList;
         expect(incList).toEqual({
             0: [1],
             1: [2],
@@ -118,7 +118,7 @@ describe("Graph", () => {
 
     it("сериализует и десериализует граф", () => {
         const graph = new Graph({ vertices, edges });
-        const json = graph.toJSON();
+        const json = graph.asJSON;
         const restored = Graph.fromJSON(json);
         expect(restored.vertices).toEqual(graph.vertices);
         expect(restored.edges).toEqual(graph.edges);
@@ -133,26 +133,83 @@ describe("Graph", () => {
     });
 
     it("выделение иерархических уровней графа", () => {
-        const vertices: Vertex[] = [0, 1, 2, 3, 4, 5, 6];
-        const edges: Edge[] =[
+        const vertices: Vertex[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        const edges: Edge[] = [
             { from: 0, to: 1 },
-            { from: 0, to: 2 },
+            { from: 0, to: 6},
+            { from: 1, to: 2 },
             { from: 1, to: 3 },
-            { from: 2, to: 3 },
-            { from: 3, to: 4 },
-            { from: 4, to: 5 },
-            { from: 5, to: 6 },
+            { from: 4, to: 3 },
+            { from: 5, to: 2 },
+            { from: 5, to: 3 },
+            { from: 6, to: 1 },
+            { from: 7, to: 5 },
+            { from: 7, to: 6 },
+            { from: 8, to: 1 },
+            { from: 9, to: 4 },
+            { from: 9, to: 6 },
+            { from: 9, to: 7 },
+            { from: 9, to: 8 }
         ]
         const graph = new Graph({ vertices, edges });
-        const HL = graph.getHierarchyLevels();
+        const HL = graph.HL;
         const expected = [
-            { level: [0] },
-            { level: [1, 2] },
-            { level: [3] },
-            { level: [4] },
-            { level: [5] },
-            { level: [6] }
+            [ 0, 9 ],
+            [ 4, 7, 8 ],
+            [ 5, 6 ],
+            [ 1 ],
+            [ 2, 3 ]
         ];
         expect(HL).toEqual(expected);
+    })
+
+    it("выделение подсистем графа", () => {
+        const vertices: Vertex[] = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+        const edges: Edge[] =[
+            { from: 1, to: 2 },
+            { from: 1, to: 6 },
+            { from: 1, to: 5 },
+            { from: 2, to: 1 },
+            { from: 3, to: 2 },
+            { from: 3, to: 5 },
+            { from: 3, to: 4 },
+            { from: 4, to: 9 },
+            { from: 5, to: 1 },
+            { from: 5, to: 7 },
+            { from: 6, to: 5 },
+            { from: 6, to: 8 },
+            { from: 6, to: 10 },
+            { from: 7, to: 4 },
+            { from: 8, to: 7 },
+            { from: 8, to: 10 },
+            { from: 9, to: 7 },
+            { from: 10, to: 8 }
+        ]
+        const graph = new Graph({ vertices, edges });
+        const subgraphs = Array.from(graph.subgraphs).map(graph => graph.asObject);
+        // console.log(subgraphs)
+        const expected = [
+            {
+                vertices: [ 1, 2, 5, 6 ],
+                edges: [
+                  { from: 1, to: 2 },
+                  { from: 1, to: 6 },
+                  { from: 1, to: 5 },
+                  { from: 2, to: 1 },
+                  { from: 5, to: 1 },
+                  { from: 6, to: 5 }
+                ]
+            },
+            { vertices: [ 3 ], edges: [] },
+            {                                                                                                                                                     
+                vertices: [ 4, 7, 9 ],
+                edges: [ { from: 4, to: 9 }, { from: 7, to: 4 }, { from: 9, to: 7 } ]
+            },
+            {                                                                                                                                                     
+                vertices: [ 8, 10 ],
+                edges: [ { from: 8, to: 10 }, { from: 10, to: 8 } ]
+            }
+        ]
+        expect(subgraphs).toEqual(expected);
     })
 });

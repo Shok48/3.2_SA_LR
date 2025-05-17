@@ -475,4 +475,118 @@ export class Graph {
 
         return HL;
     }
+
+    /**
+     * Выполняет поиск в глубину (DFS) между двумя вершинами.
+     * @param {Vertex} from Вершина, с которой начинается поиск
+     * @param {Vertex} to Вершина, в которую нужно попасть
+     * @returns {boolean} true, если существует путь из from в to, иначе false
+     */
+    DFS(from: Vertex, to: Vertex): boolean {
+        const visited = new Set<Vertex>();
+        return this._dfshelper(from, to, visited);
+    }
+
+    /**
+     * Вспомогательный рекурсивный метод для поиска в глубину.
+     * @param {Vertex} from Текущая вершина
+     * @param {Vertex} to Целевая вершина
+     * @param {Set<Vertex>} visited Множество посещённых вершин
+     * @returns {boolean} true, если найден путь, иначе false
+     */
+    private _dfshelper(from: Vertex, to: Vertex, visited: Set<Vertex>): boolean {
+        visited.add(from);
+        if (from === to) {
+            return true;
+        }
+        for (const edge of this._edges) {
+            if (edge.from === from && !visited.has(edge.to)) {
+                if (this._dfshelper(edge.to, to, visited)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Выполняет поиск в ширину (BFS) между двумя вершинами.
+     * @param {Vertex} from Вершина, с которой начинается поиск
+     * @param {Vertex} to Вершина, в которую нужно попасть
+     * @returns {boolean} true, если существует путь из from в to, иначе false
+     */
+    BFS(from: Vertex, to: Vertex): boolean {
+        const visited = new Set<Vertex>();
+        const queue: Vertex[] = [from];
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            if (current === to) {
+                return true;
+            }
+            visited.add(current);
+            for (const edge of this._edges) {
+                if (edge.from === current && !visited.has(edge.to) && !queue.includes(edge.to)) {
+                    queue.push(edge.to);
+                }
+            }
+        }
+        return false;
+    }
+
+    decompos(): { subGraphs: Set<Graph>, links: Set<{ from: number, to: number }>} {
+        const subs: Set<Graph> = new Set<Graph>();
+        const notUsedV = new Set<Vertex>(this._vertices);
+
+        while (notUsedV.size > 0) {
+            const firstVertex = [...notUsedV][0];
+            const R = new Set<Vertex>();
+            const Q = new Set<Vertex>();
+
+            notUsedV.forEach( 
+                vertex => {
+                    if (this.DFS(firstVertex, vertex)) {
+                        R.add(vertex);
+                    }
+                    if (this.DFS(vertex, firstVertex)) {
+                        Q.add(vertex);
+                    }
+                }
+            )
+
+            const intersection = [...R].filter(vertex => Q.has(vertex));
+            const subgraph = { 
+                vertices: this._vertices.filter(v => intersection.includes(v)), 
+                edges: this._edges.filter(edge => intersection.includes(edge.from) && intersection.includes(edge.to)) 
+            }
+            subs.add(new Graph(subgraph));
+
+            for (const vertex of intersection) {
+                notUsedV.delete(vertex);
+            }
+        }
+
+        const subArray = Array.from(subs);
+        const links = this._edges.reduce(
+            (links, edge) => {
+                const fromIndex = subArray.findIndex(graph => graph.vertices.includes(edge.from));
+                const toIndex = subArray.findIndex(graph => graph.vertices.includes(edge.to));
+
+                const newEdge = {
+                    from: fromIndex,
+                    to: toIndex
+                }
+                
+                if (![...links].some((link: { from: number, to: number }) => link.from === newEdge.from && link.to === newEdge.to)) {
+                    links.add(newEdge);
+                } 
+                return links
+            },
+            new Set<{ from: number, to: number }>()
+        )
+
+        return {
+            subGraphs: subs,
+            links
+        };
+    }
 }
