@@ -160,6 +160,22 @@ export class Graph {
         return new Graph({ vertices, edges });
     }
 
+    static fromDisMatrix(matrix: number[][]): Graph {
+        if (!Array.isArray(matrix)) throw new GraphArgumentError("Матрица должна быть не-null массивом");
+        if (matrix.length > 0 && !matrix.every(row => row.length === matrix.length)) {
+            throw new GraphArgumentError("Матрица расстояний должна быть квадратной");
+        }
+        const vertices: Vertex[] = matrix.map((_, i) => i);
+        const edges: Edge[] = matrix.flatMap((row, i) =>
+            row.map((distance, j) => {
+                if (i !== j && distance !== null) {
+                    return { from: i, to: j, distance}
+                }
+            }).filter(Boolean) as Edge[]
+        )
+        return new Graph({ vertices, edges })
+    }
+
     /**
      * @group Factory Methods
      * Создаёт граф из списка инцидентности.
