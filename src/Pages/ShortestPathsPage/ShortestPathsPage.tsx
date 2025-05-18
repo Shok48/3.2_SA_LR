@@ -4,7 +4,7 @@ import DistanceMatrixInput from "../../Components/DistanceMatrixInput/DistanceMa
 import { useEffect, useMemo, useState } from "react";
 import { Graph } from "../../Utils/Graph";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 interface IDataSource {
     key: string | number;
