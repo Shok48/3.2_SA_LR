@@ -175,6 +175,7 @@ export class Graph {
         if (side !== 'left' && side !== 'right') {
             throw new GraphArgumentError("Сторона должна быть 'left' или 'right'");
         }
+        // console.log("Исходное множетсво инцидентов: ", list);
         const vertices: Vertex[] = Object.keys(list).map(Number);
         const edges = Object.entries(list).flatMap(([key, values]) => {
             if (!Array.isArray(values)) {
@@ -185,10 +186,11 @@ export class Graph {
                     throw new GraphArgumentError(`Ссылка на вершину должна быть числом, получено ${value}`);
                 }
                 return side === 'left'
-                    ? { from: +key, to: +value }
-                    : { from: +value, to: +key };
+                    ? { from: +value, to: +key }
+                    : { from: +key, to: +value };
             });
         });
+        // console.log("Ребра полученные на выходе: ", edges );
         return new Graph({ vertices, edges });
     }
 
@@ -379,6 +381,21 @@ export class Graph {
 
     /**
      * @group Conversion Methods
+     * Возвращает множество левых инцидентов для конкретной вершины
+     * @param vertex вершина для которой находится список инцидентов
+     * @returns {Vertex[]} список инцидентных вершин.
+     */
+    getLeftIncList(vertex: Vertex): Vertex[] {
+        if (!this._vertices.includes(vertex)) {
+            throw new GraphValidationError(`Вершина ${vertex} не найдена в графе`);
+        }
+        return this._edges
+            .filter(edge => edge.from === vertex)
+            .map(edge => edge.to);
+    }
+
+    /**
+     * @group Conversion Methods
      * Преобразует граф в список смежности.
      */
     get asAdjList(): Record<Vertex, { target: Vertex, weight?: number }[]> {
@@ -458,6 +475,7 @@ export class Graph {
 
             if (currentLevel.length === 0) {
                 throw new GraphValidationError("Граф содержит цикл, иерархические уровни не могут быть определены");
+                // break;
             }
 
             HL.push(currentLevel);
@@ -533,57 +551,62 @@ export class Graph {
         return false;
     }
 
-    decompos(): { subGraphs: Set<Graph>, links: Set<{ from: number, to: number }>} {
+    decompose(): { subGraphs: Set<Graph>, links: Set<{ from: number, to: number }>} {
         const subs: Set<Graph> = new Set<Graph>();
         const notUsedV = new Set<Vertex>(this._vertices);
-
+    
+        // Шаг 1: Разбиваем граф на сильно связанные компоненты (подграфы)
         while (notUsedV.size > 0) {
             const firstVertex = [...notUsedV][0];
             const R = new Set<Vertex>();
             const Q = new Set<Vertex>();
-
-            notUsedV.forEach( 
-                vertex => {
-                    if (this.DFS(firstVertex, vertex)) {
-                        R.add(vertex);
-                    }
-                    if (this.DFS(vertex, firstVertex)) {
-                        Q.add(vertex);
-                    }
-                }
-            )
-
+    
+            notUsedV.forEach(vertex => {
+                if (this.DFS(firstVertex, vertex)) R.add(vertex);
+                if (this.DFS(vertex, firstVertex)) Q.add(vertex);
+            });
+    
             const intersection = [...R].filter(vertex => Q.has(vertex));
             const subgraph = { 
-                vertices: this._vertices.filter(v => intersection.includes(v)), 
-                edges: this._edges.filter(edge => intersection.includes(edge.from) && intersection.includes(edge.to)) 
-            }
+                vertices: intersection, 
+                edges: this._edges.filter(edge => 
+                    intersection.includes(edge.from) && intersection.includes(edge.to)
+                ) 
+            };
             subs.add(new Graph(subgraph));
-
+    
             for (const vertex of intersection) {
                 notUsedV.delete(vertex);
             }
         }
-
+    
+        // Шаг 2: Создаем карту вершина -> индекс подграфа
         const subArray = Array.from(subs);
-        const links = this._edges.reduce(
-            (links, edge) => {
-                const fromIndex = subArray.findIndex(graph => graph.vertices.includes(edge.from));
-                const toIndex = subArray.findIndex(graph => graph.vertices.includes(edge.to));
-
-                const newEdge = {
-                    from: fromIndex,
-                    to: toIndex
-                }
+        const vertexToSubIndex = new Map<Vertex, number>();
+        subArray.forEach((graph, index) => {
+            graph.vertices.forEach(vertex => {
+                vertexToSubIndex.set(vertex, index);
+            });
+        });
+    
+        // Шаг 3: Собираем связи между подграфами
+        const links = new Set<{ from: number, to: number }>();
+        this._edges.forEach(edge => {
+            const fromIndex = vertexToSubIndex.get(edge.from);
+            const toIndex = vertexToSubIndex.get(edge.to);
+            
+            if (fromIndex !== undefined && toIndex !== undefined && fromIndex !== toIndex) {
+                // Проверяем, что связь еще не добавлена
+                const linkExists = Array.from(links).some(
+                    link => link.from === fromIndex && link.to === toIndex
+                );
                 
-                if (![...links].some((link: { from: number, to: number }) => link.from === newEdge.from && link.to === newEdge.to)) {
-                    links.add(newEdge);
-                } 
-                return links
-            },
-            new Set<{ from: number, to: number }>()
-        )
-
+                if (!linkExists) {
+                    links.add({ from: fromIndex, to: toIndex });
+                }
+            }
+        });
+    
         return {
             subGraphs: subs,
             links

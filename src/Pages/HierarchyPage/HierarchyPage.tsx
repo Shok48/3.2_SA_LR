@@ -3,7 +3,7 @@ import IncListInput from "../../Components/IncListInput/IncListInput"
 import { Graph, GraphValidationError } from "../../Utils/Graph"
 import BasePage from "../BasePage/BasePage"
 import type { Edge, Vertex } from "../../Types/GraphData.types"
-import { Space, Table, Tag, Tooltip } from "antd"
+import { message, Space, Table, Tag, Tooltip } from "antd"
 
 interface IDataSource {
     key: string;
@@ -34,30 +34,33 @@ const HierarchyPage: React.FC = () => {
         (): { newGraph: Graph | null, vertexMapping: Map<Vertex, Vertex> | null } => {
             const vertexMapping = new Map<Vertex, Vertex>();
             let currentNum = 0;
-
-            try {
-                graph.HL.map(
-                    level => level.map(
-                        vertex => {
-                            vertexMapping.set(vertex, currentNum++);
-                            return currentNum;
-                        }
+            
+            if (graph.vertices.length !== 0 && graph.edges.length !== 0) {
+                try {
+                    graph.HL.map(
+                        level => level.map(
+                            vertex => {
+                                vertexMapping.set(vertex, currentNum++);
+                                return currentNum;
+                            }
+                        )
                     )
-                )
-
-                const newEdges: Edge[] = graph.edges.map(edge => ({
-                    from: vertexMapping.get(edge.from)!,
-                    to: vertexMapping.get(edge.to)!
-                }));
-
-                return {
-                    newGraph: new Graph({ vertices: graph.vertices.map(v => v), edges: newEdges}),
-                    vertexMapping
-                };
-            }
-            catch (e) {
-                if (e instanceof GraphValidationError) {
-                    console.error(e.message)
+    
+                    const newEdges: Edge[] = graph.edges.map(edge => ({
+                        from: vertexMapping.get(edge.from)!,
+                        to: vertexMapping.get(edge.to)!
+                    }));
+    
+                    return {
+                        newGraph: new Graph({ vertices: graph.vertices.map(v => v), edges: newEdges}),
+                        vertexMapping
+                    };
+                }
+                catch (e) {
+                    if (e instanceof GraphValidationError) {
+                        console.error(e.message)
+                        message.error(e.message)
+                    }
                 }
             }
 
