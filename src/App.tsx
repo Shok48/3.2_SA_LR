@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Link, Routes, Route } from 'react-router-dom';
 import styles from './App.module.css';
 import ConverterPage from './Pages/ConverterPage/ConverterPage';
 import HierarchyPage from './Pages/HierarchyPage/HierarchyPage';
+import DecomposePage from './Pages/DecomposPage/DecomposePage';
 
 interface IRouteConfig {
     path: string,
@@ -27,6 +28,11 @@ const routes: IRouteConfig[] = [
         path: 'LR_2',
         label: 'Целевая функция',
         component: <HierarchyPage/>
+    },
+    {
+        path: 'LR_3',
+        label: 'Топографическая декомпозиция',
+        component: <DecomposePage />
     }
 ]
 

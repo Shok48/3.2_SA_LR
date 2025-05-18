@@ -15,7 +15,7 @@ const ConverterPage: React.FC = () => {
 
     const adjMatrix = useMemo(() => {
         try {
-            return graph.toAdjMatrix();
+            return graph.asAdjMatrix;
         } catch (e) {
             if (e instanceof GraphValidationError){
                 console.error(e.message);
@@ -26,7 +26,7 @@ const ConverterPage: React.FC = () => {
 
     const incMatrix = useMemo(() => {
         try {
-            return graph.toIncMatrix();
+            return graph.asIncMatrix;
         } catch (e) {
             if (e instanceof GraphValidationError){
                 console.error(e.message);
@@ -39,7 +39,7 @@ const ConverterPage: React.FC = () => {
         setGraph(newGraph);
     }
 
-    useEffect(() => console.log('Новые значения графа: ', graph.toObject()), [graph]);
+    useEffect(() => console.log('Новые значения графа: ', graph.asObject), [graph]);
 
     const abjColumns = useMemo(() => [
         {

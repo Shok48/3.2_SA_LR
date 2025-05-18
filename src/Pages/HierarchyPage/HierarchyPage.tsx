@@ -3,12 +3,21 @@ import IncListInput from "../../Components/IncListInput/IncListInput"
 import { Graph, GraphValidationError } from "../../Utils/Graph"
 import BasePage from "../BasePage/BasePage"
 import type { Edge, Vertex } from "../../Types/GraphData.types"
-import { Space, Table, Tag, Tooltip } from "antd"
+import { message, Space, Table, Tag, Tooltip } from "antd"
 
 interface IDataSource {
     key: string;
     vertex: string;
     [key: string]: string;
+}
+
+function getKeyByValue(map: Map<Vertex, Vertex>, searchValue: Vertex): Vertex | undefined {
+    for (const [key, value] of map) {
+      if (value === searchValue) {
+        return key;
+      }
+    }
+    return undefined;
 }
 
 const HierarchyPage: React.FC = () => {
@@ -25,30 +34,33 @@ const HierarchyPage: React.FC = () => {
         (): { newGraph: Graph | null, vertexMapping: Map<Vertex, Vertex> | null } => {
             const vertexMapping = new Map<Vertex, Vertex>();
             let currentNum = 0;
-
-            try {
-                graph.HL.map(
-                    level => level.map(
-                        vertex => {
-                            vertexMapping.set(vertex, currentNum++);
-                            return currentNum;
-                        }
+            
+            if (graph.vertices.length !== 0 && graph.edges.length !== 0) {
+                try {
+                    graph.HL.map(
+                        level => level.map(
+                            vertex => {
+                                vertexMapping.set(vertex, currentNum++);
+                                return currentNum;
+                            }
+                        )
                     )
-                )
-
-                const newEdges: Edge[] = graph.edges.map(edge => ({
-                    from: vertexMapping.get(edge.from)!,
-                    to: vertexMapping.get(edge.to)!
-                }));
-
-                return {
-                    newGraph: new Graph({ vertices: graph.vertices.map(v => v), edges: newEdges}),
-                    vertexMapping
-                };
-            }
-            catch (e) {
-                if (e instanceof GraphValidationError) {
-                    console.error(e.message)
+    
+                    const newEdges: Edge[] = graph.edges.map(edge => ({
+                        from: vertexMapping.get(edge.from)!,
+                        to: vertexMapping.get(edge.to)!
+                    }));
+    
+                    return {
+                        newGraph: new Graph({ vertices: graph.vertices.map(v => v), edges: newEdges}),
+                        vertexMapping
+                    };
+                }
+                catch (e) {
+                    if (e instanceof GraphValidationError) {
+                        console.error(e.message)
+                        message.error(e.message)
+                    }
                 }
             }
 
@@ -87,7 +99,7 @@ const HierarchyPage: React.FC = () => {
 
     const graphAdjMatrix = useMemo(
         () => graph.vertices.length !== 0 && graph.edges.length !== 0
-        ? graph.toAdjMatrix().map((row, rowIndex) => ({
+        ? graph.asAdjMatrix.map((row, rowIndex) => ({
             key: `row-${rowIndex}`,
             vertex: `V${rowIndex + 1}`,
             ...Object.fromEntries(row.map((value, colIndex) => [`col${colIndex}`, value]))
@@ -106,7 +118,7 @@ const HierarchyPage: React.FC = () => {
                 width: 60,
             },
            ...reassignGraph!.vertices.map((_, index) => ({
-                title: `V${index + 1} (V${vertexMapping!.get(index)! + 1})`,
+                title: `V${index + 1} (V${getKeyByValue(vertexMapping!, index)! + 1})`,
                 dataIndex: `col${index}`,
                 key: `col${index}`,
                 width: 60,
@@ -123,7 +135,7 @@ const HierarchyPage: React.FC = () => {
 
     const reassignGraphAdjMatrix = useMemo(
         () => reassignGraph!.vertices.length!== 0 && reassignGraph!.edges.length!== 0
-       ? reassignGraph!.toAdjMatrix().map((row, rowIndex) => ({
+       ? reassignGraph!.asAdjMatrix.map((row, rowIndex) => ({
             key: `row-${rowIndex}`,
             vertex: `V${rowIndex + 1}`,
            ...Object.fromEntries(row.map((value, colIndex) => [`col${colIndex}`, value]))
@@ -134,7 +146,7 @@ const HierarchyPage: React.FC = () => {
 
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
-            console.log("Значения графа: ", graph.toObject());
+            console.log("Значения графа: ", graph.asObject);
             if (graph.vertices.length !== 0 && graph.edges.length !== 0) console.log("HL: ", graph.HL);
             console.log("vertexMapping: ", vertexMapping);
         }
