@@ -6,6 +6,7 @@ import styles from './App.module.css';
 import ConverterPage from './Pages/ConverterPage/ConverterPage';
 import HierarchyPage from './Pages/HierarchyPage/HierarchyPage';
 import DecomposePage from './Pages/DecomposPage/DecomposePage';
+import ShortestPathsPage from './Pages/ShortestPathsPage/ShortestPathsPage';
 
 interface IRouteConfig {
     path: string,
@@ -33,6 +34,11 @@ const routes: IRouteConfig[] = [
         path: 'LR_3',
         label: 'Топографическая декомпозиция',
         component: <DecomposePage />
+    },
+    {
+        path: 'LR_4',
+        label: 'Кратчайшие пути',
+        component: <ShortestPathsPage />
     }
 ]
 
