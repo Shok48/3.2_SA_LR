@@ -1,3 +1,4 @@
+import { MinPriorityQueue } from "@datastructures-js/priority-queue";
 import type { Edge, IGraphData, Vertex } from "../Types/GraphData.types";
 
 /**
@@ -160,7 +161,7 @@ export class Graph {
         return new Graph({ vertices, edges });
     }
 
-    static fromDisMatrix(matrix: number[][]): Graph {
+    static fromDisMatrix(matrix: (number | null)[][]): Graph {
         if (!Array.isArray(matrix)) throw new GraphArgumentError("Матрица должна быть не-null массивом");
         if (matrix.length > 0 && !matrix.every(row => row.length === matrix.length)) {
             throw new GraphArgumentError("Матрица расстояний должна быть квадратной");
@@ -627,5 +628,82 @@ export class Graph {
             subGraphs: subs,
             links
         };
+    }
+
+    bellmanFord(start: Vertex): Record<Vertex, number> {
+        const distances: Record<Vertex, number> = {};
+
+        this._vertices.forEach(vertex => distances[vertex] = vertex === start ? 0 : Infinity);
+
+        for (let i = 0; i < this._vertices.length - 1; i++) {
+            this._edges.forEach(({ from, to, weight }) => {
+                if (distances[from] !== Infinity && distances[from] + (weight || 1) < distances[to]) {
+                    distances[to] = distances[from] + (weight || 1);
+                }
+            })
+        }
+
+        this._edges.forEach(({ from, to, weight }) => {
+            if (distances[from]!== Infinity && distances[from] + (weight || 1) < distances[to]) {
+                throw new GraphValidationError("Граф содержит цикл отрицательного веса");
+            }
+        })
+
+        return distances;
+    }
+
+    dijkstra(start: Vertex): Record<Vertex, number> {
+        const adjList = this.asAdjList;
+        const distances: Record<Vertex, number> = {};
+        this._vertices.forEach(vertex => distances[vertex] = vertex === start ? 0 : Infinity);
+        const queue = new MinPriorityQueue<{ vertex: Vertex, weight: number}>(item => item.weight);
+        queue.enqueue({ vertex: start, weight: 0 });
+
+        while (!queue.isEmpty()) {
+            const { vertex, } = queue.dequeue()!;
+            for (const { target, weight: edgeWeight } of adjList[vertex]) {
+                if (distances[vertex]!== Infinity && distances[vertex] + (edgeWeight || 1) < distances[target]) {
+                    distances[target] = distances[vertex] + (edgeWeight || 1);
+                    queue.enqueue({ vertex: target, weight: distances[target] });
+                }
+            }
+        }
+
+        return distances;
+    }
+
+    johnson(): Record<Vertex, Record<Vertex, number>> {
+        const { vertices, edges } = { ...this.asObject };
+        const q = Math.max(...this._vertices) + 1;
+        vertices.push(q);
+        edges.push(...vertices.filter(v => v !== q).map(v => ({ from: q, to: v, weight: 0 } as Edge)));
+        let distances: Record<Vertex, number>;
+        try {
+            distances = new Graph({ vertices, edges }).bellmanFord(q);
+        } catch {
+            throw new GraphValidationError("Граф содержит цикл отрицательного веса");
+        }
+        const result: Record<Vertex, Record<Vertex, number>> = {};
+        const reweightedGraph = new Graph({
+            ...this.asObject,
+            edges: this._edges.map(
+                edge => ({
+                    ...edge,
+                    weight: (edge.weight || 1) + distances[edge.from] - distances[edge.to]
+                })
+            )
+        })
+        for (const from of this._vertices) {
+            distances = reweightedGraph.dijkstra(from);
+            result[from] = {};
+            for (const to of this._vertices) {
+                result[from][to] = distances[to] === Infinity ? Infinity : distances[to] + distances[to] - distances[from];
+            }
+        }
+        return result;
+    }
+
+    get asShortestPathsMatrix(): Record<Vertex, Record<Vertex, number>> {
+        return this.johnson();
     }
 }
