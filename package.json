@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@datastructures-js/priority-queue": "^6.3.3",
     "@types/react-router-dom": "^5.3.3",
     "antd": "^5.25.1",
     "install": "^0.13.0",
